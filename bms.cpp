@@ -114,7 +114,7 @@ void printVector(vector<vector<int>> vec) {
     }
 }
 
-vector<vector<int>> zero_matrix(size_t rows, size_t cols) {
+vector<vector<int>> zeroMatrix(size_t rows, size_t cols) {
     vector<vector<int>> block;
     for (size_t i = 0; i < rows; i++) {
         vector<int> row;
@@ -132,6 +132,14 @@ void setFirstPartOfVector(vector<vector<int>>& arr, int X, int Y, vector<vector<
     for (auto i = X; i < Y; i++) {
         arr[i] = block[ctr++];
     }
+}
+
+vector<int> getSlice(vector<vector<int>> arr, int X, int Y, int Z) {
+    vector<int> slice;
+    for (size_t i = X; (int) i < Y; i++) {
+        slice.push_back(arr[i][Z]);
+    }
+    return slice;
 }
 
 /* Fuction to transpose a matrix in vector form */
@@ -157,8 +165,8 @@ vector<vector<int>> construct_H(size_t codeword, size_t d_c, size_t d_v) {
     size_t rows = floor(n_equations / d_v);
     size_t cols = codeword;
 
-    vector<vector<int>> block = zero_matrix(rows, cols);
-    vector<vector<int>> H = zero_matrix(n_equations, codeword);
+    vector<vector<int>> block = zeroMatrix(rows, cols);
+    vector<vector<int>> H = zeroMatrix(n_equations, codeword);
 
     // Fill the first block with consecutive ones in each block row
     for (auto i = 0; i < block_size; i++) {
@@ -179,9 +187,151 @@ vector<vector<int>> construct_H(size_t codeword, size_t d_c, size_t d_v) {
     return H;   
 }
 
+size_t largestvalueIndex(vector<int> arr) {
+    size_t largest = 0;
+    for (size_t i = 1; i < arr.size(); i++) {
+        if (arr[i] > arr[i-1]) {
+            largest = i;
+        }
+    }
+    return largest;
+}
+
+vector<vector<int>> identityVector(size_t n) {
+    vector<vector<int>> identity = zeroMatrix(n, n);
+    for (size_t i = 0; i < n; i++) {
+        identity[i][i] = 1;
+    }
+    return identity;
+}
+
+pair<vector<vector<int>>, vector<vector<int>>> gaussjordan(vector<vector<int>> X, bool toggle) {
+    auto m = X.size();
+    auto n = X[0].size();
+
+    size_t old_pivot = -1;
+
+    vector<vector<int>> P;
+    
+    if (toggle) {
+        P = identityVector(m);
+    }
+
+    for (size_t j = 0; j < n; j++) {
+        vector<int> filtre_down = getSlice(X, old_pivot+1, (int) m, (int) j);
+        size_t pivot = largestvalueIndex(filtre_down) + old_pivot + 1;
+
+        if (X[pivot][j]) {
+            old_pivot++;
+            if (old_pivot != pivot) {
+                auto aux = X[pivot];
+                X[pivot] = X[old_pivot];
+                X[old_pivot] = aux;
+
+                if (toggle) {
+                    aux = P[pivot];
+                    P[pivot] = P[old_pivot];
+                    P[old_pivot] = aux;
+                }
+            }
+            
+            for (size_t i = 0; i < m; i++) {
+                if (i != old_pivot && X[i][j]) {
+                    if (toggle) {
+                        vector<int> tmp;
+                        for (size_t q = 0; q < P[0].size(); q++) {
+                            auto abs_val = abs(P[i][q] - P[old_pivot][q]);
+                            tmp.push_back(abs_val);
+                        }
+                        P[i] = tmp;
+                    }
+                    vector<int> tmp;
+                        for (size_t q = 0; q < X[0].size(); q++) {
+                            auto abs_val = abs(X[i][q] - X[old_pivot][q]);
+                            tmp.push_back(abs_val);
+                        }
+                    X[i] = tmp;
+                }
+            }
+        }
+        if (old_pivot == m-1) {
+            break;
+        }
+    }
+    return make_pair(X, P);
+}
+
+size_t vecSum(vector<int> arr) {
+    size_t sum = 0;
+    for (size_t k = 0; k < arr.size(); k++) {
+        sum += arr[k];
+    }
+    return sum;
+}
+
+size_t vecSum(vector<vector<int>> arr) {
+    size_t sum = 0;
+    for (size_t i = 0; i < arr.size(); i++) {
+        for (size_t k = 0; k < arr[i].size(); k++) {
+            sum += arr[i][k];
+        }
+    }
+    return sum;
+}
+
+void moduloMatrix(vector<vector<int>> &arr, int n) {
+    for(size_t i = 0; i < arr.size(); i++) {
+        for(size_t j = 0; j < arr[i].size(); j++) {
+            arr[i][j] = arr[i][j] % n;
+        }
+    }
+}
+
+vector<vector<int>> matrixProduct(vector<vector<int>> A, vector<vector<int>> B) {
+    if (A[0].size() != B.size()) {
+        printError("Matrix multiplication failed");
+    }
+    vector<vector<int>> multiplied(A.size(), vector<int>(A[0].size(), 0));
+    for(size_t i = 0; i < A.size(); i++) {
+        for(size_t j = 0; j < B[0].size(); j++) {
+            for (size_t k = 0; k < A[0].size(); k++) {
+                multiplied[i][j] += (A[i][k] * B[k][j]);
+            }
+        }
+    }
+    return multiplied;
+}
+
 vector<vector<int>> construct_G(vector<vector<int>> H) {
-    vector<vector<int>> G;
-    return G;
+
+    auto n_code = H[0].size();
+
+    transpose(H);
+    auto H_P = gaussjordan(H, 1);
+    transpose(H);
+
+    auto Href_colonnes = H_P.first;
+    auto tQ = H_P.second;
+
+    transpose(Href_colonnes);
+    H_P = gaussjordan(Href_colonnes, 0);
+    transpose(Href_colonnes);
+
+    auto Href_diag = H_P.first;
+
+    auto Q = tQ;
+    transpose(Q);
+
+    auto n_bits = n_code - vecSum(Href_diag);
+    auto Y = zeroMatrix(n_code, n_bits);
+
+    // Y[n_code - n_bits:, :] = np.identity(n_bits)
+    setFirstPartOfVector(Y, n_code-n_bits, (int) Y.size(), identityVector(n_bits));
+
+    auto tG = matrixProduct(Q, Y);
+    moduloMatrix(tG, 2);
+
+    return tG;
 }
 
 /* Function to create LDPC encoding and decoding matrices */
@@ -204,7 +354,8 @@ void encode(string input) {
         printError("Input must be at least 1 character long!");
     }
 
-    pair<vector<vector<int>>, vector<vector<int>>> h_g_pair = make_ldpc(codeword, d_c, d_v);
+    auto h_g_pair = make_ldpc(codeword, d_c, d_v);
+    auto H = h_g_pair.first;
     
 }
 

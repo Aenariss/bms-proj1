@@ -14,11 +14,8 @@ d_v = len(new_bin) - 1
 d_c = len(new_bin)
 
 res = np.array(new_bin)
-print(res.shape)
-print(res)
 H, G = make_ldpc(n, d_v, d_c)
 
 y = encode(G, res, snr)
 d = decode(H, y, snr)
 x = get_message(G, d)
-print(x)
