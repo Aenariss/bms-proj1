@@ -102,6 +102,17 @@ vector<int> encodeBinary(string ascii) {
     return numbers;
 }
 
+/* Function to create a vector of integers from the input */
+vector<int> decodeBinary(string ascii) {
+    vector<int> numbers;
+    for (size_t i = 0; i < ascii.size(); i++) {
+        auto number = ascii[i]-48;
+        // I dont need to check if its 1 or 0, I already have
+        numbers.push_back(number);
+    }
+    return numbers;
+}
+
 void printVector(vector<int> vec, bool pretty=false) {
     if (pretty) {
         for (auto number : vec) {
@@ -463,21 +474,37 @@ vector<int> encode(vector<vector<int>> tG, vector<int> v, size_t snr) {
     return d;
 }
 
-void decode(vector<vector<int>> tG, string y, size_t snr) {};
+void decode(vector<vector<int>> tG, vector<int> y, size_t snr) {
+    printVector(y);
+}
 
 int main(int argc, char **argv) {
     string arg = parseArgs(argc, argv);
     string input = readInput(arg);
-    vector<int> binary_input = encodeBinary(input);
+    vector<int> binary_input;
+
+    if (arg == "-e") {
+        binary_input = encodeBinary(input);
+    }
+    if (arg == "-d") {
+        binary_input = decodeBinary(input);
+    }
+
+    if (binary_input.size() == 0) {
+        printError("Invalid input! Please enter allowed character only!");
+    }
+
     pair<vector<vector<int>>, vector<vector<int>>> H_G = make_ldpc(binary_input);
     size_t snr = 20;
+
     if (arg == "-e") {
         auto encoded_text = encode(H_G.second, binary_input, snr);
         printVector(encoded_text);
     }
     else if (arg == "-d") {
         /* Pro dekodovani mi staci si ze vstupu zjistit, kolik bitu (jaka byla delka) melo puvodni slovo a podle toho udelam ldpc */
-        decode(H_G.first, input, snr);
+        decode(H_G.first, binary_input, snr);
     }
+
     return END_SUCCESS;
 }
