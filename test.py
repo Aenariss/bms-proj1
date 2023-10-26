@@ -1,6 +1,6 @@
 import numpy as np
 from pyldpc import make_ldpc, encode, decode, get_message
-msg = input()
+msg =  input()
 snr = 20
 
 binary = [int(format(ord(i), '08b')) for i in msg]

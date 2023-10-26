@@ -3,8 +3,9 @@
 #include <bitset> // bitset to convert to binary
 #include <vector>
 #include <utility> // pair
-#include <cmath> // floor
+#include <cmath> // floor, pow
 #include <algorithm> // random shuffle
+#include <random> // normal distribution
 
 #define END_SUCCESS 0
 #define END_ERROR 1
@@ -91,16 +92,26 @@ string readInput(string arg) {
 vector<int> encodeBinary(string ascii) {
     vector<int> numbers;
     for (size_t i = 0; i < ascii.size(); i++) { // convert each ascii char
-        for (auto number : bitset<8>(ascii[i]).to_string()) {
+        auto bit_repre = bitset<8>(ascii[i]).to_string();
+        auto first_one = bit_repre.find('1'); // find first number thats not zero
+        bit_repre = bit_repre.substr(first_one); // remove zero padding
+        for (auto number : bit_repre) {
             numbers.push_back(number-48); // ascii 0 is 48, so 48-48 is 0 a 49-48 is 1, just as I want
         }
     }
     return numbers;
 }
 
-void printVector(vector<int> vec) {
-    for (auto number : vec) {
-        cout << number;
+void printVector(vector<int> vec, bool pretty=false) {
+    if (pretty) {
+        for (auto number : vec) {
+            cout << number << " ";
+        }
+    }
+    else {
+        for (auto number : vec) {
+            cout << number;
+        }
     }
     cout << endl;
 }
@@ -108,16 +119,25 @@ void printVector(vector<int> vec) {
 void printVector(vector<vector<int>> vec) {
     for(size_t i = 0; i < vec.size(); i++) {
         for (size_t j = 0; j < vec[0].size(); j++) {
-            cout << vec[i][j];
+            cout << vec[i][j] << " ";
         }   
         cout << endl;
     }
 }
 
+void vectorInfo(vector<int> vec) {
+    cout << vec.size() << endl;
+}
+
+void vectorInfo(vector<vector<int>> vec) {
+    cout << vec.size() << " " << vec[0].size() << endl;
+}
+
+/* Mozna prepsat na jeden radke inicializce vektoru */
 vector<vector<int>> zeroMatrix(size_t rows, size_t cols) {
     vector<vector<int>> block;
     for (size_t i = 0; i < rows; i++) {
-        vector<int> row;
+        vector<int> row = {};
         for (size_t j = 0; j < cols; j++) {
             row.push_back(0);
         }
@@ -127,7 +147,7 @@ vector<vector<int>> zeroMatrix(size_t rows, size_t cols) {
 }
 
 /* Function to simulate python-esque arr[X:Y] */
-void setFirstPartOfVector(vector<vector<int>>& arr, int X, int Y, vector<vector<int>> block) {
+void setFirstPartOfVector(vector<vector<int>> &arr, int X, int Y, vector<vector<int>> block) {
     auto ctr = 0;
     for (auto i = X; i < Y; i++) {
         arr[i] = block[ctr++];
@@ -205,11 +225,12 @@ vector<vector<int>> identityVector(size_t n) {
     return identity;
 }
 
-pair<vector<vector<int>>, vector<vector<int>>> gaussjordan(vector<vector<int>> X, bool toggle) {
-    auto m = X.size();
-    auto n = X[0].size();
+pair<vector<vector<int>>, vector<vector<int>>> gaussjordan(vector<vector<int>> A, bool toggle) {
+    
+    auto m = A.size();
+    auto n = A[0].size();
 
-    size_t old_pivot = -1;
+    size_t pivot_old = -1;
 
     vector<vector<int>> P;
     
@@ -218,47 +239,47 @@ pair<vector<vector<int>>, vector<vector<int>>> gaussjordan(vector<vector<int>> X
     }
 
     for (size_t j = 0; j < n; j++) {
-        vector<int> filtre_down = getSlice(X, old_pivot+1, (int) m, (int) j);
-        size_t pivot = largestvalueIndex(filtre_down) + old_pivot + 1;
+        vector<int> filtre_down = getSlice(A, pivot_old+1, (int) m, (int) j);
+        size_t pivot = largestvalueIndex(filtre_down) + pivot_old + 1;
 
-        if (X[pivot][j]) {
-            old_pivot++;
-            if (old_pivot != pivot) {
-                auto aux = X[pivot];
-                X[pivot] = X[old_pivot];
-                X[old_pivot] = aux;
+        if (A[pivot][j]) {
+            pivot_old++;
+            if (pivot_old != pivot) {
+                auto aux = A[pivot];
+                A[pivot] = A[pivot_old];
+                A[pivot_old] = aux;
 
                 if (toggle) {
                     aux = P[pivot];
-                    P[pivot] = P[old_pivot];
-                    P[old_pivot] = aux;
+                    P[pivot] = P[pivot_old];
+                    P[pivot_old] = aux;
                 }
             }
             
             for (size_t i = 0; i < m; i++) {
-                if (i != old_pivot && X[i][j]) {
+                if (i != pivot_old && A[i][j]) {
                     if (toggle) {
-                        vector<int> tmp;
+                        vector<int> tmp = {};
                         for (size_t q = 0; q < P[0].size(); q++) {
-                            auto abs_val = abs(P[i][q] - P[old_pivot][q]);
+                            auto abs_val = abs(P[i][q] - P[pivot_old][q]);
                             tmp.push_back(abs_val);
                         }
                         P[i] = tmp;
                     }
-                    vector<int> tmp;
-                        for (size_t q = 0; q < X[0].size(); q++) {
-                            auto abs_val = abs(X[i][q] - X[old_pivot][q]);
+                    vector<int> tmp = {};
+                        for (size_t q = 0; q < A[0].size(); q++) {
+                            auto abs_val = abs(A[i][q] - A[pivot_old][q]);
                             tmp.push_back(abs_val);
                         }
-                    X[i] = tmp;
+                    A[i] = tmp;
                 }
             }
         }
-        if (old_pivot == m-1) {
+        if (pivot_old == m-1) {
             break;
         }
     }
-    return make_pair(X, P);
+    return make_pair(A, P);
 }
 
 size_t vecSum(vector<int> arr) {
@@ -287,11 +308,20 @@ void moduloMatrix(vector<vector<int>> &arr, int n) {
     }
 }
 
+void moduloMatrix(vector<int> &arr, int n) {
+    for(size_t i = 0; i < arr.size(); i++) {
+            arr[i] = arr[i] % n;
+    }
+}
+
+/* Function to multiply matrix by another matrix */
 vector<vector<int>> matrixProduct(vector<vector<int>> A, vector<vector<int>> B) {
     if (A[0].size() != B.size()) {
         printError("Matrix multiplication failed");
     }
-    vector<vector<int>> multiplied(A.size(), vector<int>(A[0].size(), 0));
+
+    vector<vector<int>> multiplied(A.size(), vector<int>(B[0].size(), 0));
+
     for(size_t i = 0; i < A.size(); i++) {
         for(size_t j = 0; j < B[0].size(); j++) {
             for (size_t k = 0; k < A[0].size(); k++) {
@@ -302,30 +332,75 @@ vector<vector<int>> matrixProduct(vector<vector<int>> A, vector<vector<int>> B) 
     return multiplied;
 }
 
+/* Function to multiply matrix by a vector */
+vector<int> matrixProduct(vector<vector<int>> A, vector<int> B) {
+    if (A[0].size() != B.size()) {
+        printError("Matrix multiplication failed");
+    }
+
+    vector<int> multiplied(A.size(), 0);
+
+    for(size_t i = 0; i < A.size(); i++) {
+        for (size_t k = 0; k < A[0].size(); k++) {
+            multiplied[i] += (A[i][k] * B[k]);
+        }
+    }
+    return multiplied;
+}
+
+vector<double> vectorMultiply(vector<double> &A, double val) {
+    vector<double> multiplied;
+    for (size_t i = 0; i < A.size(); i++) {
+        multiplied.push_back(A[i] * val);
+    } 
+    return multiplied;
+}
+
+
+/* Function to do value^vec for each value in the vector */
+vector<int> vectorExponent(vector<int> &vec, int value) {
+    vector<int> multiplied = {};
+    for (size_t i = 0; i < vec.size(); i++) {
+        multiplied.push_back(pow(value, ((int) vec[i])));
+    }
+    return multiplied;
+}
+
+/* Function to add values in 2 vectors */
+vector<double> vectorAdd(vector<int> &A, vector<double> &B) {
+    vector<double> results;
+    if (A.size() != B.size()) {
+        printError("Error with encoding during vector addition! They're different size!");
+    }
+    for (size_t i = 0; i < A.size(); i++) {
+        results.push_back(A[i] + B[i]);
+    }
+    return results;
+}
+
 vector<vector<int>> construct_G(vector<vector<int>> H) {
 
     auto n_code = H[0].size();
 
     transpose(H);
-    auto H_P = gaussjordan(H, 1);
+    auto H_tQ = gaussjordan(H, true);
     transpose(H);
 
-    auto Href_colonnes = H_P.first;
-    auto tQ = H_P.second;
+    auto Href_colonnes = H_tQ.first;
+
+    auto tQ = H_tQ.second;
 
     transpose(Href_colonnes);
-    H_P = gaussjordan(Href_colonnes, 0);
+    auto Href_diag = gaussjordan(Href_colonnes, false).first;
     transpose(Href_colonnes);
-
-    auto Href_diag = H_P.first;
 
     auto Q = tQ;
     transpose(Q);
 
     auto n_bits = n_code - vecSum(Href_diag);
+
     auto Y = zeroMatrix(n_code, n_bits);
 
-    // Y[n_code - n_bits:, :] = np.identity(n_bits)
     setFirstPartOfVector(Y, n_code-n_bits, (int) Y.size(), identityVector(n_bits));
 
     auto tG = matrixProduct(Q, Y);
@@ -335,40 +410,74 @@ vector<vector<int>> construct_G(vector<vector<int>> H) {
 }
 
 /* Function to create LDPC encoding and decoding matrices */
-pair<vector<vector<int>>, vector<vector<int>>> make_ldpc(size_t codeword, size_t d_c, size_t d_v) {
+pair<vector<vector<int>>, vector<vector<int>>> make_ldpc(vector<int> binary_input) {
 
-    vector<vector<int>> H = construct_H(codeword, d_c, d_v);
-    vector<vector<int>> G = construct_G(H);
-    return make_pair(H, G);
-}
-
-/* Function to encode given string into LDPC code */
-void encode(string input) {
-    vector<int> encoded = encodeBinary(input);
-
-    size_t codeword = encoded.size() * 2;
-    size_t d_c = encoded.size();
-    size_t d_v = encoded.size() - 1;
+    size_t codeword = binary_input.size() * 2;
+    size_t d_c = binary_input.size();
+    size_t d_v = binary_input.size() - 1;
 
     if (d_v <= 1) {
         printError("Input must be at least 1 character long!");
     }
 
-    auto h_g_pair = make_ldpc(codeword, d_c, d_v);
-    auto H = h_g_pair.first;
-    
+    vector<vector<int>> H = construct_H(codeword, d_c, d_v);
+    vector<vector<int>> G = construct_G(H);
+
+    return make_pair(H, G);
 }
 
-void decode(string input) {};
+/* Function to return a random nubmer from standard normal distribution which has mean 0 and variance 1*/
+vector<double> randn(size_t n) {
+    random_device rd;
+    mt19937 gen(rd());
+    normal_distribution<double> distr(0.0, 1.0);
+    vector<double> ret;
+    for (size_t i = 0; i < n; i++) {
+        ret.push_back(distr(gen));
+    }
+    return ret;
+}
+
+/** @brief Function to perform the LDPC encoding
+ * 
+ *  @param tG The coding matrix
+ *  @param v Vector of integeres containing the input in binary format
+ *  @param snr Signal-To-Noise ratio
+ * 
+ *  @returns Encoded value
+ */
+vector<int> encode(vector<vector<int>> tG, vector<int> v, size_t snr) {
+    auto d = matrixProduct(tG, v);
+    moduloMatrix(d, 2);
+
+    /* 
+    //Gaussian noise, just to check it works!
+    auto x = vectorExponent(d, -1);
+    auto sigma = pow(10, (-snr/20));
+    auto rand_ns = randn(x.size());
+    auto e = vectorMultiply(rand_ns, sigma);
+    auto y = vectorAdd(x, e);
+    return y;
+    */
+
+    return d;
+}
+
+void decode(vector<vector<int>> tG, string y, size_t snr) {};
 
 int main(int argc, char **argv) {
     string arg = parseArgs(argc, argv);
     string input = readInput(arg);
+    vector<int> binary_input = encodeBinary(input);
+    pair<vector<vector<int>>, vector<vector<int>>> H_G = make_ldpc(binary_input);
+    size_t snr = 20;
     if (arg == "-e") {
-        encode(input);
+        auto encoded_text = encode(H_G.second, binary_input, snr);
+        printVector(encoded_text);
     }
     else if (arg == "-d") {
-        decode(input);
+        /* Pro dekodovani mi staci si ze vstupu zjistit, kolik bitu (jaka byla delka) melo puvodni slovo a podle toho udelam ldpc */
+        decode(H_G.first, input, snr);
     }
     return END_SUCCESS;
 }
