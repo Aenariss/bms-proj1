@@ -1,2 +1,5 @@
 bms
 .vscode/
+matica.csv
+*.py
+__pycache__/

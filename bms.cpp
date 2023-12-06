@@ -1,4 +1,12 @@
+/**
+ * BMS Project
+ * Author: Vojtech Fiala <xfiala61> 
+ * Note: Very heavily inspired by https://github.com/hichamjanati/pyldpc
+*/
+
+
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <bitset> // bitset to convert to binary
 #include <vector>
@@ -9,6 +17,8 @@
 
 #define END_SUCCESS 0
 #define END_ERROR 1
+#define MATRIX_FILE "matica.csv"
+#define ITERATION_LIMIT 500
 
 using namespace std;
 
@@ -18,17 +28,115 @@ void printError(string message, int exitCode=END_ERROR) {
     exit(exitCode);
 }
 
+
+/* Function to multiply matrix by another matrix */
+vector<vector<int>> matrixProduct(vector<vector<int>> A, vector<vector<int>> B) {
+    if (A[0].size() != B.size()) {
+        printError("Matrix multiplication failed");
+    }
+
+    vector<vector<int>> multiplied(A.size(), vector<int>(B[0].size(), 0));
+
+    for(size_t i = 0; i < A.size(); i++) {
+        for(size_t j = 0; j < B[0].size(); j++) {
+            for (size_t k = 0; k < A[0].size(); k++) {
+                multiplied[i][j] += (A[i][k] * B[k][j]);
+            }
+        }
+    }
+    return multiplied;
+}
+
+/* Function to multiply matrix by a vector */
+vector<int> matrixProduct(vector<vector<int>> A, vector<int> B) {
+    if (A[0].size() != B.size()) {
+        printError("Matrix multiplication failed");
+    }
+
+    vector<int> multiplied(A.size(), 0);
+
+    for(size_t i = 0; i < A.size(); i++) {
+        for (size_t k = 0; k < A[0].size(); k++) {
+            multiplied[i] += (A[i][k] * B[k]);
+        }
+    }
+    return multiplied;
+}
+
+
+void moduloMatrix(vector<vector<int>> &arr, int n) {
+    for(size_t i = 0; i < arr.size(); i++) {
+        for(size_t j = 0; j < arr[i].size(); j++) {
+            arr[i][j] = arr[i][j] % n;
+        }
+    }
+}
+
+void moduloMatrix(vector<int> &arr, int n) {
+    for(size_t i = 0; i < arr.size(); i++) {
+            arr[i] = (n + (arr[i] % n)) % n;
+    }
+}
+
+/**
+ * Function to calculate binary product of 2 matrices
+*/
+vector<int> binaryProduct(vector<vector<int>> H, vector<int> x) {
+    auto prod = matrixProduct(H, x);
+    moduloMatrix(prod, 2);
+    return prod;
+}
+
+/**
+ * Function to calculate binary product of 2 matrices
+*/
+int binaryProduct(vector<int> H, vector<int> x) {
+    int prod = 0;
+    if (H.size() != x.size()) {
+        printError("Invalid binary product calculation!");
+    }
+    for (size_t i = 0; i < H.size(); i++) {
+        prod += H[i] * x[i];
+    }
+    return (2 + (prod % 2)) % 2;
+}
+
 /* Function to parse arguments and check if they're valid */
-string parseArgs(int argc, char **argv) {
-    if (argc != 2) {
-        printError("Invalid argument! Valid arguments: -d | -e");
+pair<string, string> parseArgs(int argc, char **argv) {
+    if (argc != 2 && argc != 4) {
+        printError("Invalid argument! Valid arguments: -d | -e | -m");
     }
 
-    if (string(argv[1]) != string("-e") && string(argv[1]) != string("-d")) {
-        printError("Invalid argument! Valid arguments: -d | -e");
+    string e_d_flag = "";
+    string matrix_file = "";
+
+    for (int i = 0; i < argc; i++) {
+        auto curr_arg = string(argv[i]);
+        if (curr_arg == "-e" || curr_arg == "-d") {
+            e_d_flag = curr_arg;
+        }
+        // Unnecessary matrix was used
+        if (curr_arg == "-m") {
+            // There has to be atleast 1 more argument which I assume to be the matrix file
+            if (i+1 < argc) {
+                matrix_file = argv[i+1];
+                i++;
+            }
+            else {
+                printError("When using the -m parameter, you need to also give a file with the matrix!");
+            }
+        }
     }
 
-    return string(argv[1]);
+    if (matrix_file == "" && e_d_flag == "-d") {
+        printError("When using the -d parameter, you need to also give the matrix!");
+    }
+
+    if (e_d_flag == "") {
+        printError("Missing -e or -d!");
+    }
+
+    return make_pair(e_d_flag, matrix_file);
 }
 
 /* Function to check if given char is a 0 or 1 */
@@ -70,7 +178,7 @@ string makeValidEncoding(string input) {
 
 /* Function to read whole stdin and return it */
 string readInput(string arg) {
-    string input;
+    string input = "";
     string tmp;
     if (arg == "-e") { // if encoding, remove everything but a-z, A-Z, 0-9
         while (getline(cin, tmp)) {
@@ -83,37 +191,13 @@ string readInput(string arg) {
         while (getline(cin, tmp)) {
             tmp = makeValidDecoding(tmp);
             input += tmp;
+            break;
         }
     }
     return input;
 }
 
-/* Function to create a vector of integers representing the original string in binary */
-vector<int> encodeBinary(string ascii) {
-    vector<int> numbers;
-    for (size_t i = 0; i < ascii.size(); i++) { // convert each ascii char
-        auto bit_repre = bitset<8>(ascii[i]).to_string();
-        auto first_one = bit_repre.find('1'); // find first number thats not zero
-        bit_repre = bit_repre.substr(first_one); // remove zero padding
-        for (auto number : bit_repre) {
-            numbers.push_back(number-48); // ascii 0 is 48, so 48-48 is 0 a 49-48 is 1, just as I want
-        }
-    }
-    return numbers;
-}
-
-/* Function to create a vector of integers from the input */
-vector<int> decodeBinary(string ascii) {
-    vector<int> numbers;
-    for (size_t i = 0; i < ascii.size(); i++) {
-        auto number = ascii[i]-48;
-        // I dont need to check if its 1 or 0, I already have
-        numbers.push_back(number);
-    }
-    return numbers;
-}
-
-void printVector(vector<int> vec, bool pretty=false) {
+void printVector(vector<int> vec, bool pretty=true) {
     if (pretty) {
         for (auto number : vec) {
             cout << number << " ";
@@ -135,6 +219,32 @@ void printVector(vector<vector<int>> vec) {
         cout << endl;
     }
 }
+
+/* Function to create a vector of integers representing the original string in binary */
+vector<int> encodeBinary(string ascii) {
+    vector<int> numbers;
+    for (size_t i = 0; i < ascii.size(); i++) { // convert each ascii char
+        auto bit_repre = bitset<8>(ascii[i]).to_string();
+        //auto first_one = bit_repre.find('1'); // find first number thats not zero
+        //bit_repre = bit_repre.substr(first_one); // remove zero padding
+        for (auto number : bit_repre) {
+            numbers.push_back(number-48); // ascii 0 is 48, so 48-48 is 0 a 49-48 is 1, just as I want
+        }
+    }
+    return numbers;
+}
+
+/* Function to create a vector of integers from the input */
+vector<int> decodeBinary(string ascii) {
+    vector<int> numbers;
+    for (size_t i = 0; i < ascii.size(); i++) {
+        auto number = ascii[i]-48;
+        // I dont need to check if its 1 or 0, I already have
+        numbers.push_back(number);
+    }
+    return numbers;
+}
+
 
 void vectorInfo(vector<int> vec) {
     cout << vec.size() << endl;
@@ -169,6 +279,14 @@ vector<int> getSlice(vector<vector<int>> arr, int X, int Y, int Z) {
     vector<int> slice;
     for (size_t i = X; (int) i < Y; i++) {
         slice.push_back(arr[i][Z]);
+    }
+    return slice;
+}
+
+vector<int> getSlice(vector<int> arr, int X, int Y) {
+    vector<int> slice;
+    for (size_t i = X; (int) i < Y; i++) {
+        slice.push_back(arr[i]);
     }
     return slice;
 }
@@ -220,9 +338,11 @@ vector<vector<int>> construct_H(size_t codeword, size_t d_c, size_t d_v) {
 
 size_t largestvalueIndex(vector<int> arr) {
     size_t largest = 0;
+    int largestVal = arr[0];
     for (size_t i = 1; i < arr.size(); i++) {
-        if (arr[i] > arr[i-1]) {
+        if (arr[i] > largestVal) {
             largest = i;
+            largestVal = arr[i];
         }
     }
     return largest;
@@ -311,56 +431,16 @@ size_t vecSum(vector<vector<int>> arr) {
     return sum;
 }
 
-void moduloMatrix(vector<vector<int>> &arr, int n) {
-    for(size_t i = 0; i < arr.size(); i++) {
-        for(size_t j = 0; j < arr[i].size(); j++) {
-            arr[i][j] = arr[i][j] % n;
-        }
-    }
-}
-
-void moduloMatrix(vector<int> &arr, int n) {
-    for(size_t i = 0; i < arr.size(); i++) {
-            arr[i] = arr[i] % n;
-    }
-}
-
-/* Function to multiply matrix by another matrix */
-vector<vector<int>> matrixProduct(vector<vector<int>> A, vector<vector<int>> B) {
-    if (A[0].size() != B.size()) {
-        printError("Matrix multiplication failed");
-    }
-
-    vector<vector<int>> multiplied(A.size(), vector<int>(B[0].size(), 0));
-
-    for(size_t i = 0; i < A.size(); i++) {
-        for(size_t j = 0; j < B[0].size(); j++) {
-            for (size_t k = 0; k < A[0].size(); k++) {
-                multiplied[i][j] += (A[i][k] * B[k][j]);
-            }
-        }
-    }
-    return multiplied;
-}
-
-/* Function to multiply matrix by a vector */
-vector<int> matrixProduct(vector<vector<int>> A, vector<int> B) {
-    if (A[0].size() != B.size()) {
-        printError("Matrix multiplication failed");
-    }
-
-    vector<int> multiplied(A.size(), 0);
-
-    for(size_t i = 0; i < A.size(); i++) {
-        for (size_t k = 0; k < A[0].size(); k++) {
-            multiplied[i] += (A[i][k] * B[k]);
-        }
-    }
-    return multiplied;
-}
-
 vector<double> vectorMultiply(vector<double> &A, double val) {
     vector<double> multiplied;
+    for (size_t i = 0; i < A.size(); i++) {
+        multiplied.push_back(A[i] * val);
+    } 
+    return multiplied;
+}
+
+vector<int> vectorMultiply(vector<int> &A, double val) {
+    vector<int> multiplied;
     for (size_t i = 0; i < A.size(); i++) {
         multiplied.push_back(A[i] * val);
     } 
@@ -457,11 +537,11 @@ vector<double> randn(size_t n) {
  * 
  *  @returns Encoded value
  */
-vector<int> encode(vector<vector<int>> tG, vector<int> v, size_t snr) {
-    auto d = matrixProduct(tG, v);
-    moduloMatrix(d, 2);
+vector<int> encode(vector<vector<int>> tG, vector<int> v) {
+    auto d = binaryProduct(tG, v);
 
     /* 
+    auto snr = 20;
     //Gaussian noise, just to check it works!
     auto x = vectorExponent(d, -1);
     auto sigma = pow(10, (-snr/20));
@@ -474,36 +554,424 @@ vector<int> encode(vector<vector<int>> tG, vector<int> v, size_t snr) {
     return d;
 }
 
-void decode(vector<vector<int>> tG, vector<int> y, size_t snr) {
-    printVector(y);
+/**
+ * Function to simulate numpy where
+*/
+vector<vector<int>> where(vector<vector<int>> H) {
+    vector<int> row;
+    vector<int> col;
+    for (size_t i = 0; i < H.size(); i++) {
+        for (size_t k = 0; k < H[i].size(); k++) {
+            if(H[i][k]) {
+                col.push_back(k);
+                row.push_back(i);
+            }
+        }
+    }
+    vector<vector<int>> rowCols = {row, col};
+    return rowCols;
+}
+
+/***
+ * Function to count number of occurences of a given number in a given array
+*/
+int count(vector<int> arr, int x) {
+    int ctr = 0;
+    for (auto number : arr) {
+        if (number == x) {
+            ctr++;
+        }
+    }
+    return ctr;
+}
+
+/**
+ * Function to simulate the binCount numpy function
+*/
+vector<int> binCount(vector<int> arr) {
+    vector<int> bins;
+
+    int max = *max_element(arr.begin(), arr.end());
+
+    for (int i = 0; i < max+1; i++) {
+        auto n_of_occurences = count(arr, i);
+        bins.push_back(n_of_occurences);
+    }
+    return bins;
+}
+
+/**
+ * Function to find the bits and nodes of the parity matrix H
+*/
+vector<vector<int>> bitsNodes(vector<vector<int>> H) {
+
+    auto validIndexes = where(H);
+    auto bitsIndices = validIndexes[0];
+    auto bits = validIndexes[1];
+
+    transpose(H);
+
+    validIndexes = where(H);
+    auto nodesIndices = validIndexes[0];
+    auto nodes = validIndexes[1];
+
+    auto bitsBins = binCount(bitsIndices);
+    auto nodeBins = binCount(nodesIndices);
+
+    vector<vector<int>> bitsNodes = {bitsBins, bits, nodeBins, nodes};
+    return bitsNodes;
+}
+
+/**
+ * Function to calculate the probabilities
+*/
+pair<pair<vector<vector<int>>, vector<vector<int>>>, vector<double>> log_belief_propagation(vector<int> bitsHist, vector<int> bits, 
+                                                                          vector<int> nodesHist, vector<int> nodes, 
+                                                                          vector<vector<int>> Lq, vector<vector<int>> Lr, vector<int> Lc, int n_iter) {
+
+    auto m = Lr.size();
+    auto n = Lr[0].size();
+    auto n_messages = 1;
+    auto bits_counter = 0;
+    auto nodes_counter = 0;
+
+    // Horizontal
+    for (size_t i = 0; i < m; i++) {
+        auto ff = bitsHist[i];
+        auto ni = getSlice(bits, bits_counter, bits_counter + ff);
+        bits_counter += ff;
+        for (auto j : ni) {
+            auto nij = ni;
+            vector<int> X = {1}; // number of n_messages
+            if (n_iter == 0) {
+                for (size_t k = 0; k < nij.size(); k++) {
+                    if (nij[k] != j) {
+                        for (size_t kk = 0; kk < X.size(); kk++) {
+                            X[kk] *= tanh(0.5 * Lc[nij[kk]]);
+                        }
+                    }
+                }
+            }
+            else {
+                for (size_t k = 0; k < nij.size(); k++) {
+                    if (nij[k] != j) {
+                        for (size_t kk = 0; kk < X.size(); kk++) {
+                            X[kk] *= tanh(0.5 * Lq[i][nij[kk]]);
+                        }
+                    }
+                }
+            }
+            auto num = X;
+            for (size_t kk = 0; kk < num.size(); kk++) {
+                num[kk] += 1;
+            }
+            auto denom = X;
+            for (size_t kk = 0; kk < denom.size(); kk++) {
+                denom[kk] = 1 - denom[kk];
+            }
+            for (int kk = 0; kk < n_messages; kk++) {
+                if (num[kk] == 0) {
+                    Lr[i][j] = -1;
+                }
+                else if (denom[kk] == 0) {
+                    Lr[i][j] = 1;
+                }
+                else {
+                    Lr[i][j] = log(num[kk] / denom[kk]);
+                }
+            }
+        }
+    }
+
+    // Vertical
+    for (size_t j = 0; j < n; j++) {
+        auto ff = nodesHist[j];
+        auto mj = getSlice(nodes, nodes_counter, nodes_counter + ff);
+        nodes_counter += ff;
+        for (auto i : mj) {
+            auto mji = mj;
+            Lq[i][j] = Lc[j];
+            for (size_t k = 0; k < mji.size(); k++) {
+                if (mji[k] != i) {
+                    Lq[i][j] += Lr[mji[k]][j];
+                }
+            }
+        }
+    }
+
+    // Posterior
+    vector<double> L_Post;
+    for (size_t i = 0; i < n; i++) {
+        L_Post.push_back(0);
+    }
+    nodes_counter = 0;
+
+    for (size_t j = 0; j < n; j++) {
+        auto ff = nodesHist[j];
+        auto mj = getSlice(nodes, nodes_counter, nodes_counter + ff);
+        nodes_counter += ff;
+        double value = 0;
+        for (auto number : mj) {
+            value += Lr[number][j];
+        }
+        L_Post[j] = Lc[j] + value;
+    }
+
+    return make_pair(make_pair(Lq, Lr), L_Post);
+}
+
+int checkMatrixZero(vector<vector<int>> H, vector<int> x) {
+    auto prod = binaryProduct(H, x);
+    for (auto a : prod) {
+        if (a != 0) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+pair<vector<vector<int>>, vector<int>> gaussElimination(vector<vector<int>> A, vector<int> b) {
+    auto n = A.size();
+    auto k = A[0].size();
+
+    auto range_limit = n < k ? n : k;
+
+    for (size_t j = 0; j < range_limit; j++) {
+        vector<int> listedpivots;
+        for (size_t i = j; i < n; i++) {
+            if (A[i][j]) {
+                listedpivots.push_back(i);
+            }
+        }
+        size_t pivot = 99999999;
+        if (listedpivots.size()) {
+            pivot = *min_element(listedpivots.begin(), listedpivots.end());
+        }
+        else {
+            continue;
+        }
+
+        if (pivot != j) {
+            auto aux = A[j];
+            A[j] = A[pivot];
+            A[pivot] = aux;
+
+            auto baux = b[j];
+            b[j] = b[pivot];
+            b[pivot] = baux;
+        }
+
+        for (auto i = j+1; i < n; i++) {
+            if (A[i][j]) {
+                for (size_t k = 0; k < A[0].size(); k++) {
+                    A[i][k] = abs(A[i][k]-A[j][k]);
+                }
+                b[i] = abs(b[i]-b[j]);
+            }
+        }
+    }
+    return make_pair(A,b);
+}
+
+void invertBits(vector<int>&message) {
+    for (size_t i = 0; i < message.size(); i++) {
+        message[i] = message[i] == 0 ? 1 : 0;
+    }
+}
+
+void binaryToString(vector<int> &message) {
+
+    string tmp = "";
+
+    for (size_t i = 0; i < message.size(); i++) {
+        if (i % 8 == 0 && i > 0) {
+            auto ascii_val = stoi(tmp, nullptr, 2);
+            cout << (char) ascii_val;
+            tmp = to_string(message[i]);
+        }
+        else {
+            tmp += to_string(message[i]);
+        }
+    }
+    auto ascii_val = stoi(tmp, nullptr, 2);
+    cout << (char) ascii_val; // Finish the last one
+    cout << endl;
+}
+
+/**
+ * Function to get the original message from the decoded sequence and print it
+*/
+void originalMessage(vector<vector<int>> H, vector<int> x) {
+
+    vector<vector<int>> G = construct_G(H);
+
+    auto k = G[0].size();
+    auto gaussResult = gaussElimination(G, x);
+    auto rtG = gaussResult.first;
+    auto rx = gaussResult.second;
+
+    vector<int> message;
+    for (size_t i = 0; i < k; i++) {
+        message.push_back(0);
+    }
+
+    message[k-1] = rx[k-1];
+    for (int i = k-1-1; i >= 0; i--) {
+        message[i] = rx[i];
+
+        vector<int> rtgSlice;
+        vector<int> messageSlice;
+        for (size_t z = i+1; z < k; z++) {
+            rtgSlice.push_back(rtG[i][z]);
+            messageSlice.push_back(message[z]);
+        }
+        message[i] -= binaryProduct(rtgSlice, messageSlice);
+    }
+    for (size_t i = 0; i < message.size(); i++) {
+        message[i] = abs(message[i]);
+    } 
+    invertBits(message);
+    binaryToString(message);
+}
+
+/**
+ * Function to decode given input using given parity matrix
+*/
+void decode(vector<vector<int>> H, vector<int> y) {
+    // decoding is WRONG !!! Needs fixing!
+
+    auto m = H.size();
+    auto n = H[0].size();
+
+    // Get bits and nodes of the parity-check H matrix
+    auto statsVector = bitsNodes(H);
+    auto bitsHist = statsVector[0]; auto bits = statsVector[1]; auto nodesHist = statsVector[2]; auto nodes = statsVector[3];
+
+    auto solver = log_belief_propagation;
+
+    auto Lq = zeroMatrix(m, n);
+    auto Lr = zeroMatrix(m, n);
+    auto Lc = vectorMultiply(y, 2);
+
+    vector<int> x;
+
+    for (int i = 0; i < ITERATION_LIMIT; i++) {
+        auto probs = solver(bitsHist, bits, nodesHist, nodes, Lq, Lr, Lc, i);
+        Lq = probs.first.first;
+        Lr = probs.first.second;
+        auto L_post = probs.second;   
+
+        x = {};
+        for (auto value : L_post) {
+            x.push_back(int(value <= 0));
+        }
+
+        auto product = checkMatrixZero(H, x);
+        if (product) {
+            break;
+        }
+    }
+    
+    originalMessage(H, x);
+}
+
+void writeCsv(vector<vector<int>> matrix) {
+    ofstream f(MATRIX_FILE);
+    if (f.is_open()) {
+        auto line_size = matrix[0].size();
+        for (auto line : matrix) {
+            for (size_t i = 0; i < line_size; i++) {
+                // If it's the last number, don't put another comma behind it
+                if (i == line_size-1) {
+                    f << to_string(line[i]);
+                }
+                else {
+                    f << to_string(line[i]) << ",";
+                }
+            }
+            f << '\n';
+        }
+        f.close();
+    }
+    else {
+        printError("Unable to write the parity check matrix!");
+    }
+}
+
+vector<vector<int>> readCsv(string filename) {
+    vector<vector<int>> matrix;
+    string line;
+    ifstream f(filename);
+    if (f.is_open()) {
+        while (getline(f, line)) {
+            // Go through characters in the line and numbers between commas wil lbe pushed into the matrix
+            string buffer = "";
+            vector<int> matrix_line;
+            for (auto a : line) {
+                if (a == ',') {
+                    matrix_line.push_back(stoi(buffer));
+                    buffer = "";
+                }
+                else if (isOneOrZero(a)) {
+                    buffer += a;
+                }
+                // The matrix can only contain 0 or 1
+                else {
+                    printError("Invalid character in the parity matrix!");
+                }
+            }
+            matrix_line.push_back(stoi(buffer)); // Don't forget the final number which has no comma after
+            matrix.push_back(matrix_line);
+        }
+        f.close();
+    }
+    else {
+        printError("Unable to open the matrix file!");
+    }
+    return matrix;
 }
 
 int main(int argc, char **argv) {
-    string arg = parseArgs(argc, argv);
-    string input = readInput(arg);
+    pair<string, string> args = parseArgs(argc, argv);
+    string encode_decode = args.first;
+    string matrix_file = args.second;
+
+    vector<vector<int>> user_matrix;
+
+    if (matrix_file != "") {
+        user_matrix = readCsv(matrix_file);
+    }
+    string input = readInput(encode_decode);
     vector<int> binary_input;
 
-    if (arg == "-e") {
+    if (encode_decode == "-e") {
         binary_input = encodeBinary(input);
     }
-    if (arg == "-d") {
+    if (encode_decode == "-d") {
         binary_input = decodeBinary(input);
     }
-
     if (binary_input.size() == 0) {
         printError("Invalid input! Please enter allowed character only!");
     }
 
-    pair<vector<vector<int>>, vector<vector<int>>> H_G = make_ldpc(binary_input);
-    size_t snr = 20;
-
-    if (arg == "-e") {
-        auto encoded_text = encode(H_G.second, binary_input, snr);
-        printVector(encoded_text);
+    if (encode_decode == "-e") {
+        // If i wasnt given a coding matrix, use my own and write it into the matica.csv
+        if (matrix_file == "") {
+            pair<vector<vector<int>>, vector<vector<int>>> H_G = make_ldpc(binary_input);
+            writeCsv(H_G.first); // Write out the parity matrix (H)
+            // Encode using the Generator matrix (G)
+            auto encoded_text = encode(H_G.second, binary_input);
+            printVector(encoded_text, false);
+        }
+        // Else use the given one
+        else {
+            auto encoded_text = encode(user_matrix, binary_input);
+            printVector(encoded_text, false);
+        }
     }
-    else if (arg == "-d") {
-        /* Pro dekodovani mi staci si ze vstupu zjistit, kolik bitu (jaka byla delka) melo puvodni slovo a podle toho udelam ldpc */
-        decode(H_G.first, binary_input, snr);
+    else if (encode_decode == "-d") {
+        // Decode using the given Parity matrix
+        decode(user_matrix, binary_input);
     }
 
     return END_SUCCESS;

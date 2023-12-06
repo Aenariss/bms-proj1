@@ -1,5 +1,5 @@
 CC = g++
-CFLAGS = -Wall -Werror
+CFLAGS = -Wall -Werror -O2
 TARGET = bms
 
 FILE_NAMES = bms
