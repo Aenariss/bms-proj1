@@ -539,18 +539,6 @@ vector<double> randn(size_t n) {
  */
 vector<int> encode(vector<vector<int>> tG, vector<int> v) {
     auto d = binaryProduct(tG, v);
-
-    /* 
-    auto snr = 20;
-    //Gaussian noise, just to check it works!
-    auto x = vectorExponent(d, -1);
-    auto sigma = pow(10, (-snr/20));
-    auto rand_ns = randn(x.size());
-    auto e = vectorMultiply(rand_ns, sigma);
-    auto y = vectorAdd(x, e);
-    return y;
-    */
-
     return d;
 }
 
@@ -802,7 +790,6 @@ void binaryToString(vector<int> &message) {
  * Function to get the original message from the decoded sequence and print it
 */
 void originalMessage(vector<vector<int>> H, vector<int> x) {
-
     vector<vector<int>> G = construct_G(H);
 
     auto k = G[0].size();
@@ -830,6 +817,7 @@ void originalMessage(vector<vector<int>> H, vector<int> x) {
     for (size_t i = 0; i < message.size(); i++) {
         message[i] = abs(message[i]);
     } 
+
     invertBits(message);
     binaryToString(message);
 }
@@ -838,7 +826,6 @@ void originalMessage(vector<vector<int>> H, vector<int> x) {
  * Function to decode given input using given parity matrix
 */
 void decode(vector<vector<int>> H, vector<int> y) {
-    // decoding is WRONG !!! Needs fixing!
 
     auto m = H.size();
     auto n = H[0].size();
@@ -965,7 +952,8 @@ int main(int argc, char **argv) {
         }
         // Else use the given one
         else {
-            auto encoded_text = encode(user_matrix, binary_input);
+            vector<vector<int>> G = construct_G(user_matrix);
+            auto encoded_text = encode(G, binary_input);
             printVector(encoded_text, false);
         }
     }

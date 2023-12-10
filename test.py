@@ -6,7 +6,9 @@ snr = 20
 binary = [int(format(ord(i), '08b')) for i in msg]
 new_bin = []
 for bin in binary:
-    for letter in str(bin):
+    if len(str(bin)) < 8:
+        bin = (8-len(str(bin))) * ["0"] + list(str(bin))
+    for letter in ''.join(bin):
         new_bin.append(int(letter))
 
 n = len(new_bin) * 2
@@ -14,8 +16,7 @@ d_v = len(new_bin) - 1
 d_c = len(new_bin)
 
 res = np.array(new_bin)
-#H, G = make_ldpc(n, d_v, d_c)
-
+H, G = make_ldpc(n, d_v, d_c)
 def readCsv():
     H = []
     f = open("matica.csv", "r")
@@ -24,26 +25,19 @@ def readCsv():
         H.append(tmp)
     f.close()
     return H
+
+
 H = np.array(readCsv()).astype(int)
 G = coding_matrix(H)
 
-y = encode(G, res, snr)
+y = encode(G, res, snr) # KODUJU ASI STEJNE JAKO TOTO
+print(y[int(len(y)/2):])
+#print(y)
+
 #print(''.join([str(x) for x in y]))
 
-#y = np.array([1, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0 ,0 ,1 ,0, 1, 0, 1, 0, 1, 0 ,1 ,1 ,1 ,1 ,1 ,0, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 1, 0, 0])
+#y = np.array([0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0 ,0 ,1 ,0, 1, 0, 1, 0, 1, 0 ,1 ,1 ,1 ,1 ,1 ,0, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 1, 0, 0])
 
-############################
-from BeliefPropagation import BeliefPropagation, TannerGraph, bsc_llr
-
-#model = bsc_llr(0.3)
-#tg = TannerGraph.from_biadjacency_matrix(H, channel_model=model)
-#bp = BeliefPropagation(tg, H, max_iter=10)
-#estimate, llr, decode_success = bp.decode(y)
-
-#print("EST:", estimate[len(res):])
-
-
-# NEUMIM OPRAVIT CHYBY
 d = decode(H, y, snr)
 
 
@@ -51,4 +45,5 @@ d = decode(H, y, snr)
 
 x = get_message(G, d)
 
-print("NEW:", x)
+print(x)
+print(res)
