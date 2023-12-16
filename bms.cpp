@@ -63,7 +63,7 @@ vector<int> matrixProduct(vector<vector<int>> A, vector<int> B) {
     return multiplied;
 }
 
-
+/* Function to modulo each value in the matrix by a given number */
 void moduloMatrix(vector<vector<int>> &arr, int n) {
     for(size_t i = 0; i < arr.size(); i++) {
         for(size_t j = 0; j < arr[i].size(); j++) {
@@ -72,24 +72,21 @@ void moduloMatrix(vector<vector<int>> &arr, int n) {
     }
 }
 
+/* Function to modulo each value in the vector by a given number */
 void moduloMatrix(vector<int> &arr, int n) {
     for(size_t i = 0; i < arr.size(); i++) {
             arr[i] = (n + (arr[i] % n)) % n;
     }
 }
 
-/**
- * Function to calculate binary product of 2 matrices
-*/
+/* Function to calculate binary product of 2 matrices */
 vector<int> binaryProduct(vector<vector<int>> H, vector<int> x) {
     auto prod = matrixProduct(H, x);
     moduloMatrix(prod, 2);
     return prod;
 }
 
-/**
- * Function to calculate binary product of 2 matrices
-*/
+/** Function to calculate binary product of 2 matrices */
 int binaryProduct(vector<int> H, vector<int> x) {
     int prod = 0;
     if (H.size() != x.size()) {
@@ -197,6 +194,7 @@ string readInput(string arg) {
     return input;
 }
 
+/** Function to print the vector to stdout */
 void printVector(vector<int> vec, bool pretty=true) {
     if (pretty) {
         for (auto number : vec) {
@@ -211,6 +209,7 @@ void printVector(vector<int> vec, bool pretty=true) {
     cout << endl;
 }
 
+/** Function to print the vector to stdout */
 void printVector(vector<vector<int>> vec) {
     for(size_t i = 0; i < vec.size(); i++) {
         for (size_t j = 0; j < vec[0].size(); j++) {
@@ -225,6 +224,7 @@ vector<int> encodeBinary(string ascii) {
     vector<int> numbers;
     for (size_t i = 0; i < ascii.size(); i++) { // convert each ascii char
         auto bit_repre = bitset<8>(ascii[i]).to_string();
+        // zero padding makes it unable to easily get ascii values back - dont use it
         //auto first_one = bit_repre.find('1'); // find first number thats not zero
         //bit_repre = bit_repre.substr(first_one); // remove zero padding
         for (auto number : bit_repre) {
@@ -246,10 +246,12 @@ vector<int> decodeBinary(string ascii) {
 }
 
 
+/* Function to print information about the vector */
 void vectorInfo(vector<int> vec) {
     cout << vec.size() << endl;
 }
 
+/* Function to print information about the vector */
 void vectorInfo(vector<vector<int>> vec) {
     cout << vec.size() << " " << vec[0].size() << endl;
 }
@@ -275,6 +277,7 @@ void setFirstPartOfVector(vector<vector<int>> &arr, int X, int Y, vector<vector<
     }
 }
 
+/* Function to get python-like slice of given matrix */
 vector<int> getSlice(vector<vector<int>> arr, int X, int Y, int Z) {
     vector<int> slice;
     for (size_t i = X; (int) i < Y; i++) {
@@ -283,6 +286,7 @@ vector<int> getSlice(vector<vector<int>> arr, int X, int Y, int Z) {
     return slice;
 }
 
+/* Function to get python-like slice of given matrix */
 vector<int> getSlice(vector<int> arr, int X, int Y) {
     vector<int> slice;
     for (size_t i = X; (int) i < Y; i++) {
@@ -292,7 +296,6 @@ vector<int> getSlice(vector<int> arr, int X, int Y) {
 }
 
 /* Fuction to transpose a matrix in vector form */
-/* https://stackoverflow.com/a/49445850 */
 void transpose(vector<vector<int>> &vec) {
 
     vector<vector<int>> trans(vec[0].size());
@@ -306,36 +309,37 @@ void transpose(vector<vector<int>> &vec) {
 }
 
 /** Function to construct the H matrix */
-vector<vector<int>> construct_H(size_t codeword, size_t d_c, size_t d_v) {
+vector<vector<int>> createParityMatrix(size_t codeword, size_t d_c, size_t d_v) {
 
-    auto n_equations = floor((codeword * d_v) / d_c);
-    auto block_size = floor(n_equations / d_v);
+    auto eq_count = floor((codeword * d_v) / d_c);
+    auto bs = floor(eq_count / d_v);
 
-    size_t rows = floor(n_equations / d_v);
+    size_t rows = floor(eq_count / d_v);
     size_t cols = codeword;
 
     vector<vector<int>> block = zeroMatrix(rows, cols);
-    vector<vector<int>> H = zeroMatrix(n_equations, codeword);
+    vector<vector<int>> parityMatrix = zeroMatrix(eq_count, codeword);
 
     // Fill the first block with consecutive ones in each block row
-    for (auto i = 0; i < block_size; i++) {
+    for (auto i = 0; i < bs; i++) {
         for (auto j = i * d_c; j < (i+1) * d_c; j++) {
             block[i][j] = 1;
         }
     }
     // set the H vector up to the block size to correspond with the set block
-    setFirstPartOfVector(H, 0, block_size, block);
+    setFirstPartOfVector(parityMatrix, 0, bs, block);
 
     // remaining blocks are permutations of the first block's column
     for (size_t i = 1; i < d_v; i++) {
         transpose(block);
         random_shuffle(block.begin(), block.end());
         transpose(block);
-        setFirstPartOfVector(H, i * block_size, (i+1) * block_size, block);
+        setFirstPartOfVector(parityMatrix, i * bs, (i+1) * bs, block);
     }
-    return H;   
+    return parityMatrix;   
 }
 
+/* Function to simulate argMax() in numpy */
 size_t largestvalueIndex(vector<int> arr) {
     size_t largest = 0;
     int largestVal = arr[0];
@@ -348,6 +352,7 @@ size_t largestvalueIndex(vector<int> arr) {
     return largest;
 }
 
+/* Function to return identity matrix of given size */
 vector<vector<int>> identityVector(size_t n) {
     vector<vector<int>> identity = zeroMatrix(n, n);
     for (size_t i = 0; i < n; i++) {
@@ -356,63 +361,72 @@ vector<vector<int>> identityVector(size_t n) {
     return identity;
 }
 
-pair<vector<vector<int>>, vector<vector<int>>> gaussjordan(vector<vector<int>> A, bool toggle) {
+/* Function to calculate gauss elimination */
+pair<vector<vector<int>>, vector<vector<int>>> gaussjordan(vector<vector<int>> matrix, bool toggle) {
     
-    auto m = A.size();
-    auto n = A[0].size();
+    // initial matrix size
+    auto rows = matrix.size(); // rows
+    auto cols = matrix[0].size(); // cols
 
-    size_t pivot_old = -1;
+    size_t prev_piv = -1;
 
-    vector<vector<int>> P;
+    vector<vector<int>> p_matrix;
     
     if (toggle) {
-        P = identityVector(m);
+        p_matrix = identityVector(rows);
     }
 
-    for (size_t j = 0; j < n; j++) {
-        vector<int> filtre_down = getSlice(A, pivot_old+1, (int) m, (int) j);
-        size_t pivot = largestvalueIndex(filtre_down) + pivot_old + 1;
+    // go through each column
+    for (size_t j = 0; j < cols; j++) {
+        vector<int> filtre_down = getSlice(matrix, prev_piv+1, (int) rows, (int) j); // part of current column below the old pivot
+        size_t pivot = largestvalueIndex(filtre_down) + prev_piv + 1; // new pivot becomes the largest value index in the selected part of the column
 
-        if (A[pivot][j]) {
-            pivot_old++;
-            if (pivot_old != pivot) {
-                auto aux = A[pivot];
-                A[pivot] = A[pivot_old];
-                A[pivot_old] = aux;
+        // if pivot is 1
+        if (matrix[pivot][j]) {
+            prev_piv++;
+
+            // swap rows if pivot index has moved by more than one
+            if (prev_piv != pivot) {
+                auto aux = matrix[pivot];
+                matrix[pivot] = matrix[prev_piv];
+                matrix[prev_piv] = aux;
 
                 if (toggle) {
-                    aux = P[pivot];
-                    P[pivot] = P[pivot_old];
-                    P[pivot_old] = aux;
+                    aux = p_matrix[pivot];
+                    p_matrix[pivot] = p_matrix[prev_piv];
+                    p_matrix[prev_piv] = aux;
                 }
             }
             
-            for (size_t i = 0; i < m; i++) {
-                if (i != pivot_old && A[i][j]) {
+            // remove other values in current column
+            for (size_t i = 0; i < rows; i++) {
+                if (i != prev_piv && matrix[i][j]) {
                     if (toggle) {
                         vector<int> tmp = {};
-                        for (size_t q = 0; q < P[0].size(); q++) {
-                            auto abs_val = abs(P[i][q] - P[pivot_old][q]);
+                        for (size_t q = 0; q < p_matrix[0].size(); q++) {
+                            auto abs_val = abs(p_matrix[i][q] - p_matrix[prev_piv][q]);
                             tmp.push_back(abs_val);
                         }
-                        P[i] = tmp;
+                        p_matrix[i] = tmp;
                     }
                     vector<int> tmp = {};
-                        for (size_t q = 0; q < A[0].size(); q++) {
-                            auto abs_val = abs(A[i][q] - A[pivot_old][q]);
+                        for (size_t q = 0; q < matrix[0].size(); q++) {
+                            auto abs_val = abs(matrix[i][q] - matrix[prev_piv][q]);
                             tmp.push_back(abs_val);
                         }
-                    A[i] = tmp;
+                    matrix[i] = tmp;
                 }
             }
         }
-        if (pivot_old == m-1) {
+        // break after going through each row
+        if (prev_piv == rows-1) {
             break;
         }
     }
-    return make_pair(A, P);
+    return make_pair(matrix, p_matrix);
 }
 
+/* Function to calculate the sum of a matrix, numpy-like sum() */
 size_t vecSum(vector<int> arr) {
     size_t sum = 0;
     for (size_t k = 0; k < arr.size(); k++) {
@@ -421,6 +435,7 @@ size_t vecSum(vector<int> arr) {
     return sum;
 }
 
+/* Function to calculate the sum of a matrix, numpy-like sum() */
 size_t vecSum(vector<vector<int>> arr) {
     size_t sum = 0;
     for (size_t i = 0; i < arr.size(); i++) {
@@ -431,6 +446,7 @@ size_t vecSum(vector<vector<int>> arr) {
     return sum;
 }
 
+/* Function to multiply all values in a vector by a constant */
 vector<double> vectorMultiply(vector<double> &A, double val) {
     vector<double> multiplied;
     for (size_t i = 0; i < A.size(); i++) {
@@ -439,6 +455,7 @@ vector<double> vectorMultiply(vector<double> &A, double val) {
     return multiplied;
 }
 
+/* Function to multiply all values in a vector by a constant */
 vector<int> vectorMultiply(vector<int> &A, double val) {
     vector<int> multiplied;
     for (size_t i = 0; i < A.size(); i++) {
@@ -469,39 +486,41 @@ vector<double> vectorAdd(vector<int> &A, vector<double> &B) {
     return results;
 }
 
-vector<vector<int>> construct_G(vector<vector<int>> H) {
+/* Function to construct the generating matrix from the parity matrix */
+vector<vector<int>> createGeneratingMatrix(vector<vector<int>> parityMatrix) {
 
-    auto n_code = H[0].size();
+    auto codewordSize = parityMatrix[0].size(); // codeword size (n of columns in the parity matrix)
 
-    transpose(H);
-    auto H_tQ = gaussjordan(H, true);
-    transpose(H);
+    transpose(parityMatrix);
+    // do gauss-jordan elimination on transposed H
+    auto H_tQ = gaussjordan(parityMatrix, true);
+    transpose(parityMatrix);
 
-    auto Href_colonnes = H_tQ.first;
+    auto parityReduced = H_tQ.first; // parity matrix in reduced row echelon form
 
-    auto tQ = H_tQ.second;
+    transpose(parityReduced);
 
-    transpose(Href_colonnes);
-    auto Href_diag = gaussjordan(Href_colonnes, false).first;
-    transpose(Href_colonnes);
+    // do gaussjordan on the transposed reduced row echelon form of parity matrix
+    auto diag = gaussjordan(parityReduced, false).first; // diagonalized form of the reduced row echelon form
+    transpose(parityReduced);
 
-    auto Q = tQ;
-    transpose(Q);
+    auto transformationMatrix = H_tQ.second;
+    transpose(transformationMatrix);
 
-    auto n_bits = n_code - vecSum(Href_diag);
+    auto bitCount = codewordSize - vecSum(diag); // number of information bits in the codeword
 
-    auto Y = zeroMatrix(n_code, n_bits);
+    auto tmp = zeroMatrix(codewordSize, bitCount);
 
-    setFirstPartOfVector(Y, n_code-n_bits, (int) Y.size(), identityVector(n_bits));
+    setFirstPartOfVector(tmp, codewordSize - bitCount, (int) tmp.size(), identityVector(bitCount));
 
-    auto tG = matrixProduct(Q, Y);
-    moduloMatrix(tG, 2);
+    auto generatingMatrix = matrixProduct(transformationMatrix, tmp);
+    moduloMatrix(generatingMatrix, 2);
 
-    return tG;
+    return generatingMatrix;
 }
 
-/* Function to create LDPC encoding and decoding matrices */
-pair<vector<vector<int>>, vector<vector<int>>> make_ldpc(vector<int> binary_input) {
+/* Function to create LDPC Parity matrix and generating matrix */
+pair<vector<vector<int>>, vector<vector<int>>> createMatrixes(vector<int> binary_input) {
 
     size_t codeword = binary_input.size() * 2;
     size_t d_c = binary_input.size();
@@ -511,10 +530,10 @@ pair<vector<vector<int>>, vector<vector<int>>> make_ldpc(vector<int> binary_inpu
         printError("Input must be at least 1 character long!");
     }
 
-    vector<vector<int>> H = construct_H(codeword, d_c, d_v);
-    vector<vector<int>> G = construct_G(H);
+    vector<vector<int>> parity = createParityMatrix(codeword, d_c, d_v);
+    vector<vector<int>> generating = createGeneratingMatrix(parity);
 
-    return make_pair(H, G);
+    return make_pair(parity, generating);
 }
 
 /* Function to return a random nubmer from standard normal distribution which has mean 0 and variance 1*/
@@ -529,28 +548,20 @@ vector<double> randn(size_t n) {
     return ret;
 }
 
-/** @brief Function to perform the LDPC encoding
- * 
- *  @param tG The coding matrix
- *  @param v Vector of integeres containing the input in binary format
- *  @param snr Signal-To-Noise ratio
- * 
- *  @returns Encoded value
- */
-vector<int> encode(vector<vector<int>> tG, vector<int> v) {
-    auto d = binaryProduct(tG, v);
-    return d;
+
+/* Function to encode the binary string by multiplying it with the generating matrix */
+vector<int> encode(vector<vector<int>> generatingMatrix, vector<int> message) {
+    auto encoded = binaryProduct(generatingMatrix, message);
+    return encoded;
 }
 
-/**
- * Function to simulate numpy where
-*/
-vector<vector<int>> where(vector<vector<int>> H) {
+/* Function to simulate numpy where */
+vector<vector<int>> where(vector<vector<int>> matrix) {
     vector<int> row;
     vector<int> col;
-    for (size_t i = 0; i < H.size(); i++) {
-        for (size_t k = 0; k < H[i].size(); k++) {
-            if(H[i][k]) {
+    for (size_t i = 0; i < matrix.size(); i++) {
+        for (size_t k = 0; k < matrix[i].size(); k++) {
+            if(matrix[i][k]) {
                 col.push_back(k);
                 row.push_back(i);
             }
@@ -560,9 +571,7 @@ vector<vector<int>> where(vector<vector<int>> H) {
     return rowCols;
 }
 
-/***
- * Function to count number of occurences of a given number in a given array
-*/
+/* Function to count number of occurences of a given number in a given array */
 int count(vector<int> arr, int x) {
     int ctr = 0;
     for (auto number : arr) {
@@ -573,9 +582,7 @@ int count(vector<int> arr, int x) {
     return ctr;
 }
 
-/**
- * Function to simulate the binCount numpy function
-*/
+/* Function to simulate the binCount numpy function */
 vector<int> binCount(vector<int> arr) {
     vector<int> bins;
 
@@ -588,128 +595,118 @@ vector<int> binCount(vector<int> arr) {
     return bins;
 }
 
-/**
- * Function to find the bits and nodes of the parity matrix H
-*/
-vector<vector<int>> bitsNodes(vector<vector<int>> H) {
+/* Function to find the bits and nodes of the parity matrix */
+vector<vector<int>> bitsNodes(vector<vector<int>> parityMatrix) {
 
-    auto validIndexes = where(H);
-    auto bitsIndices = validIndexes[0];
-    auto bits = validIndexes[1];
+    auto bitIndexes = where(parityMatrix); // indexes of 1s
+    auto bitRows = bitIndexes[0];
+    auto bitCols = bitIndexes[1];
 
-    transpose(H);
+    transpose(parityMatrix);
 
-    validIndexes = where(H);
-    auto nodesIndices = validIndexes[0];
-    auto nodes = validIndexes[1];
+    auto nodeIndexes = where(parityMatrix); // indexes of 1s of transposed parity (nodes)
+    auto nodeRows = nodeIndexes[0];
+    auto nodeCols = nodeIndexes[1];
 
-    auto bitsBins = binCount(bitsIndices);
-    auto nodeBins = binCount(nodesIndices);
+    auto bitsBins = binCount(bitRows); // occurences of bits
+    auto nodeBins = binCount(nodeRows); // occurences of nodes
 
-    vector<vector<int>> bitsNodes = {bitsBins, bits, nodeBins, nodes};
+    vector<vector<int>> bitsNodes = {bitsBins, bitCols, nodeBins, nodeCols};
     return bitsNodes;
 }
 
-/**
- * Function to calculate the probabilities
+/* Function to calculate the probabilities using belief propagation 
+ * aprioriMatrix is the apriori information
+ * CVM is check:variable matrix
+ * VCM is variable:check matrix
 */
-pair<pair<vector<vector<int>>, vector<vector<int>>>, vector<double>> log_belief_propagation(vector<int> bitsHist, vector<int> bits, 
-                                                                          vector<int> nodesHist, vector<int> nodes, 
-                                                                          vector<vector<int>> Lq, vector<vector<int>> Lr, vector<int> Lc, int n_iter) {
+pair<pair<vector<vector<int>>, vector<vector<int>>>, vector<double>> log_belief_propagation(vector<int> bitsBins, vector<int> bitCols, 
+                                                                          vector<int> nodesBins, vector<int> nodeCols, 
+                                                                          vector<vector<int>> VCM, vector<vector<int>> CVM, vector<int> aprioriMatrix, int toggle) {
 
-    auto m = Lr.size();
-    auto n = Lr[0].size();
-    auto n_messages = 1;
+    auto rows = CVM.size(); // rows
+    auto cols = CVM[0].size(); // cols
     auto bits_counter = 0;
     auto nodes_counter = 0;
 
     // Horizontal
-    for (size_t i = 0; i < m; i++) {
-        auto ff = bitsHist[i];
-        auto ni = getSlice(bits, bits_counter, bits_counter + ff);
-        bits_counter += ff;
-        for (auto j : ni) {
-            auto nij = ni;
-            vector<int> X = {1}; // number of n_messages
-            if (n_iter == 0) {
-                for (size_t k = 0; k < nij.size(); k++) {
-                    if (nij[k] != j) {
-                        for (size_t kk = 0; kk < X.size(); kk++) {
-                            X[kk] *= tanh(0.5 * Lc[nij[kk]]);
-                        }
+    for (size_t row = 0; row < rows; row++) {
+        auto currBin = bitsBins[row];
+        auto currBitColSlice = getSlice(bitCols, bits_counter, bits_counter + currBin);
+        bits_counter += currBin;
+        for (auto bitCol : currBitColSlice) {
+            auto tmpCurrBitColSlice = currBitColSlice;
+            int val = 1;
+            // if first iterationm multiply by apriori information
+            if (toggle == 0) {
+                for (size_t k = 0; k < tmpCurrBitColSlice.size(); k++) {
+                    if (tmpCurrBitColSlice[k] != bitCol) {
+                        val *= tanh(0.5 * aprioriMatrix[tmpCurrBitColSlice[0]]);
                     }
                 }
+            }
+            // else multiply by VCM
+            else {
+                for (size_t k = 0; k < tmpCurrBitColSlice.size(); k++) {
+                    if (tmpCurrBitColSlice[k] != bitCol) {
+                        val *= tanh(0.5 * VCM[row][tmpCurrBitColSlice[0]]);
+                    }
+                }
+            }
+            auto numerator = val + 1;
+            auto denominator = 1 - val;
+            if (numerator == 0) {
+                CVM[row][bitCol] = -1;
+            }
+            else if (denominator == 0) {
+                CVM[row][bitCol] = 1;
             }
             else {
-                for (size_t k = 0; k < nij.size(); k++) {
-                    if (nij[k] != j) {
-                        for (size_t kk = 0; kk < X.size(); kk++) {
-                            X[kk] *= tanh(0.5 * Lq[i][nij[kk]]);
-                        }
-                    }
-                }
-            }
-            auto num = X;
-            for (size_t kk = 0; kk < num.size(); kk++) {
-                num[kk] += 1;
-            }
-            auto denom = X;
-            for (size_t kk = 0; kk < denom.size(); kk++) {
-                denom[kk] = 1 - denom[kk];
-            }
-            for (int kk = 0; kk < n_messages; kk++) {
-                if (num[kk] == 0) {
-                    Lr[i][j] = -1;
-                }
-                else if (denom[kk] == 0) {
-                    Lr[i][j] = 1;
-                }
-                else {
-                    Lr[i][j] = log(num[kk] / denom[kk]);
-                }
+                CVM[row][bitCol] = log(numerator / denominator);
             }
         }
     }
 
     // Vertical
-    for (size_t j = 0; j < n; j++) {
-        auto ff = nodesHist[j];
-        auto mj = getSlice(nodes, nodes_counter, nodes_counter + ff);
-        nodes_counter += ff;
-        for (auto i : mj) {
-            auto mji = mj;
-            Lq[i][j] = Lc[j];
-            for (size_t k = 0; k < mji.size(); k++) {
-                if (mji[k] != i) {
-                    Lq[i][j] += Lr[mji[k]][j];
+    for (size_t col = 0; col < cols; col++) {
+        auto currBin = nodesBins[col];
+        auto currNodeColSlice = getSlice(nodeCols, nodes_counter, nodes_counter + currBin);
+        nodes_counter += currBin;
+        for (auto currCol : currNodeColSlice) {
+            auto tmpCurrNodeColSlice = currNodeColSlice;
+            VCM[currCol][col] = aprioriMatrix[col];
+            for (size_t k = 0; k < tmpCurrNodeColSlice.size(); k++) {
+                if (tmpCurrNodeColSlice[k] != currCol) {
+                    VCM[currCol][col] += CVM[tmpCurrNodeColSlice[k]][col];
                 }
             }
         }
     }
 
     // Posterior
-    vector<double> L_Post;
-    for (size_t i = 0; i < n; i++) {
-        L_Post.push_back(0);
+    vector<double> posteriorMatrix;
+    for (size_t col = 0; col < cols; col++) {
+        posteriorMatrix.push_back(0);
     }
     nodes_counter = 0;
 
-    for (size_t j = 0; j < n; j++) {
-        auto ff = nodesHist[j];
-        auto mj = getSlice(nodes, nodes_counter, nodes_counter + ff);
-        nodes_counter += ff;
-        double value = 0;
-        for (auto number : mj) {
-            value += Lr[number][j];
+    for (size_t col = 0; col < cols; col++) {
+        auto nodeBin = nodesBins[col];
+        auto currNodeColSlice = getSlice(nodeCols, nodes_counter, nodes_counter + nodeBin);
+        nodes_counter += nodeBin;
+        int value = 0;
+        for (auto number : currNodeColSlice) {
+            value += CVM[number][col];
         }
-        L_Post[j] = Lc[j] + value;
+        posteriorMatrix[col] = aprioriMatrix[col] + value;
     }
 
-    return make_pair(make_pair(Lq, Lr), L_Post);
+    return make_pair(make_pair(VCM, CVM), posteriorMatrix);
 }
 
-int checkMatrixZero(vector<vector<int>> H, vector<int> x) {
-    auto prod = binaryProduct(H, x);
+/* Function to check if binary product of given matrix contains only zeros */
+int checkMatrixZero(vector<vector<int>> matrix, vector<int> vec) {
+    auto prod = binaryProduct(matrix, vec);
     for (auto a : prod) {
         if (a != 0) {
             return 0;
@@ -718,67 +715,79 @@ int checkMatrixZero(vector<vector<int>> H, vector<int> x) {
     return 1;
 }
 
-pair<vector<vector<int>>, vector<int>> gaussElimination(vector<vector<int>> A, vector<int> b) {
-    auto n = A.size();
-    auto k = A[0].size();
+/* Function to perform gauss elimination */
+pair<vector<vector<int>>, vector<int>> gaussElimination(vector<vector<int>> matrix, vector<int> vec) {
+    auto rows = matrix.size(); // rows
+    auto cols = matrix[0].size(); // cols
 
-    auto range_limit = n < k ? n : k;
+    auto limit = rows < cols ? rows : cols; // lower number is the limit
 
-    for (size_t j = 0; j < range_limit; j++) {
-        vector<int> listedpivots;
-        for (size_t i = j; i < n; i++) {
-            if (A[i][j]) {
-                listedpivots.push_back(i);
+    // go through columns
+    for (size_t col = 0; col < limit; col++) {
+        vector<int> pivots;
+
+        // find row indexes with 1s in current column
+        for (size_t i = col; i < rows; i++) {
+            if (matrix[i][col]) {
+                pivots.push_back(i);
             }
         }
+
         size_t pivot = 99999999;
-        if (listedpivots.size()) {
-            pivot = *min_element(listedpivots.begin(), listedpivots.end());
+
+        // If there was at least one 1 found in the column, base the pivot on the lowest value
+        if (pivots.size()) {
+            pivot = *min_element(pivots.begin(), pivots.end());
         }
         else {
             continue;
         }
 
-        if (pivot != j) {
-            auto aux = A[j];
-            A[j] = A[pivot];
-            A[pivot] = aux;
+        // if pivot doesnt correspon to current column, swap them
+        if (pivot != col) {
+            auto tmp = matrix[col];
+            matrix[col] = matrix[pivot];
+            matrix[pivot] = tmp;
 
-            auto baux = b[j];
-            b[j] = b[pivot];
-            b[pivot] = baux;
+            auto tmp2 = vec[col];
+            vec[col] = vec[pivot];
+            vec[pivot] = tmp2;
         }
 
-        for (auto i = j+1; i < n; i++) {
-            if (A[i][j]) {
-                for (size_t k = 0; k < A[0].size(); k++) {
-                    A[i][k] = abs(A[i][k]-A[j][k]);
+        // do the elimination
+        for (auto i = col+1; i < rows; i++) {
+            if (matrix[i][col]) {
+                // substract rows from following rows to remove 1s
+                for (size_t k = 0; k < matrix[0].size(); k++) {
+                    matrix[i][k] = abs(matrix[i][k] - matrix[col][k]);
                 }
-                b[i] = abs(b[i]-b[j]);
+                vec[i] = abs(vec[i] - vec[col]);
             }
         }
     }
-    return make_pair(A,b);
+    return make_pair(matrix, vec);
 }
 
-void invertBits(vector<int>&message) {
-    for (size_t i = 0; i < message.size(); i++) {
-        message[i] = message[i] == 0 ? 1 : 0;
+/* Function to invert bits in given vector */
+void invertBits(vector<int>&vec) {
+    for (size_t i = 0; i < vec.size(); i++) {
+        vec[i] = vec[i] == 0 ? 1 : 0;
     }
 }
 
-void binaryToString(vector<int> &message) {
+/* Function to print binary string representation as ascii string*/
+void binaryToString(vector<int> &vec) {
 
     string tmp = "";
 
-    for (size_t i = 0; i < message.size(); i++) {
+    for (size_t i = 0; i < vec.size(); i++) {
         if (i % 8 == 0 && i > 0) {
             auto ascii_val = stoi(tmp, nullptr, 2);
             cout << (char) ascii_val;
-            tmp = to_string(message[i]);
+            tmp = to_string(vec[i]);
         }
         else {
-            tmp += to_string(message[i]);
+            tmp += to_string(vec[i]);
         }
     }
     auto ascii_val = stoi(tmp, nullptr, 2);
@@ -786,82 +795,81 @@ void binaryToString(vector<int> &message) {
     cout << endl;
 }
 
-/**
- * Function to get the original message from the decoded sequence and print it
-*/
-void originalMessage(vector<vector<int>> H, vector<int> x) {
-    vector<vector<int>> G = construct_G(H);
+/* Function to get the original message from the decoded sequence and print it */
+void originalMessage(vector<vector<int>> parityMatrix, vector<int> msg) {
+    vector<vector<int>> generatingMatrix = createGeneratingMatrix(parityMatrix); // find generating matrix from parity
 
-    auto k = G[0].size();
-    auto gaussResult = gaussElimination(G, x);
-    auto rtG = gaussResult.first;
-    auto rx = gaussResult.second;
+    auto generatingCols = generatingMatrix[0].size(); // information bits in original msg
+    auto gaussResult = gaussElimination(generatingMatrix, msg);
+    auto eliminatedMatrix = gaussResult.first;
+    auto eliminatedMsg = gaussResult.second;
 
     vector<int> message;
-    for (size_t i = 0; i < k; i++) {
+    for (size_t i = 0; i < generatingCols; i++) {
         message.push_back(0);
     }
 
-    message[k-1] = rx[k-1];
-    for (int i = k-1-1; i >= 0; i--) {
-        message[i] = rx[i];
+    message[generatingCols-1] = eliminatedMsg[generatingCols-1];
+    for (int i = generatingCols - 2; i >= 0; i--) {
+        message[i] = eliminatedMsg[i];
 
-        vector<int> rtgSlice;
+        vector<int> eliminatedSlice;
         vector<int> messageSlice;
-        for (size_t z = i+1; z < k; z++) {
-            rtgSlice.push_back(rtG[i][z]);
+        for (size_t z = i+1; z < generatingCols; z++) {
+            eliminatedSlice.push_back(eliminatedMatrix[i][z]);
             messageSlice.push_back(message[z]);
         }
-        message[i] -= binaryProduct(rtgSlice, messageSlice);
+        message[i] -= binaryProduct(eliminatedSlice, messageSlice);
     }
+    // all elements must be positive
     for (size_t i = 0; i < message.size(); i++) {
         message[i] = abs(message[i]);
     } 
 
     invertBits(message);
+
+    // convert bits to string and print them
     binaryToString(message);
 }
 
 /**
  * Function to decode given input using given parity matrix
 */
-void decode(vector<vector<int>> H, vector<int> y) {
+void decode(vector<vector<int>> parityMatrix, vector<int> received_msg) {
 
-    auto m = H.size();
-    auto n = H[0].size();
+    auto rows = parityMatrix.size();
+    auto cols = parityMatrix[0].size();
 
     // Get bits and nodes of the parity-check H matrix
-    auto statsVector = bitsNodes(H);
-    auto bitsHist = statsVector[0]; auto bits = statsVector[1]; auto nodesHist = statsVector[2]; auto nodes = statsVector[3];
+    auto statsVector = bitsNodes(parityMatrix);
+    auto bitsBins = statsVector[0]; auto bitCols = statsVector[1]; auto nodesBins = statsVector[2]; auto nodeCols = statsVector[3];
+    auto VCM = zeroMatrix(rows, cols);
+    auto CVM = zeroMatrix(rows, cols);
+    auto apriori = received_msg; // given vector is the apriori information
 
-    auto solver = log_belief_propagation;
-
-    auto Lq = zeroMatrix(m, n);
-    auto Lr = zeroMatrix(m, n);
-    auto Lc = vectorMultiply(y, 2);
-
-    vector<int> x;
+    vector<int> orig_msg;
 
     for (int i = 0; i < ITERATION_LIMIT; i++) {
-        auto probs = solver(bitsHist, bits, nodesHist, nodes, Lq, Lr, Lc, i);
-        Lq = probs.first.first;
-        Lr = probs.first.second;
-        auto L_post = probs.second;   
+        auto probs = log_belief_propagation(bitsBins, bitCols, nodesBins, nodeCols, VCM, CVM, apriori, i);
+        VCM = probs.first.first;
+        CVM = probs.first.second;
+        auto posterior = probs.second;   
 
-        x = {};
-        for (auto value : L_post) {
-            x.push_back(int(value <= 0));
+        orig_msg = {};
+        for (auto value : posterior) {
+            orig_msg.push_back(int(value <= 0));
         }
 
-        auto product = checkMatrixZero(H, x);
-        if (product) {
+        auto check = checkMatrixZero(parityMatrix, orig_msg);
+        if (check) { // early convergence
             break;
         }
     }
     
-    originalMessage(H, x);
+    originalMessage(parityMatrix, orig_msg); // get the original message from decoded codeword
 }
 
+/* Function to write a given matrix as a csv file */
 void writeCsv(vector<vector<int>> matrix) {
     ofstream f(MATRIX_FILE);
     if (f.is_open()) {
@@ -885,6 +893,7 @@ void writeCsv(vector<vector<int>> matrix) {
     }
 }
 
+/* Function to load parity matrix from given csv file */
 vector<vector<int>> readCsv(string filename) {
     vector<vector<int>> matrix;
     string line;
@@ -918,6 +927,7 @@ vector<vector<int>> readCsv(string filename) {
     return matrix;
 }
 
+/* Main */
 int main(int argc, char **argv) {
     pair<string, string> args = parseArgs(argc, argv);
     string encode_decode = args.first;
@@ -944,7 +954,7 @@ int main(int argc, char **argv) {
     if (encode_decode == "-e") {
         // If i wasnt given a coding matrix, use my own and write it into the matica.csv
         if (matrix_file == "") {
-            pair<vector<vector<int>>, vector<vector<int>>> H_G = make_ldpc(binary_input);
+            pair<vector<vector<int>>, vector<vector<int>>> H_G = createMatrixes(binary_input);
             writeCsv(H_G.first); // Write out the parity matrix (H)
             // Encode using the Generator matrix (G)
             auto encoded_text = encode(H_G.second, binary_input);
@@ -952,7 +962,7 @@ int main(int argc, char **argv) {
         }
         // Else use the given one
         else {
-            vector<vector<int>> G = construct_G(user_matrix);
+            vector<vector<int>> G = createGeneratingMatrix(user_matrix);
             auto encoded_text = encode(G, binary_input);
             printVector(encoded_text, false);
         }

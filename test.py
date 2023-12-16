@@ -31,12 +31,19 @@ H = np.array(readCsv()).astype(int)
 G = coding_matrix(H)
 
 y = encode(G, res, snr) # KODUJU ASI STEJNE JAKO TOTO
-print(y[int(len(y)/2):])
+#print(y[int(len(y)/2):])
 #print(y)
 
 #print(''.join([str(x) for x in y]))
 
-#y = np.array([0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0 ,0 ,1 ,0, 1, 0, 1, 0, 1, 0 ,1 ,1 ,1 ,1 ,1 ,0, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 1, 0, 0])
+y = np.array([0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0 ,0 ,1 ,0, 1, 0, 1, 0, 1, 0 ,1 ,1 ,1 ,1 ,1 ,0, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 1, 0, 0])
+
+print(y)
+
+#if y[-1] == 1:
+#    y[-1] =0 
+#elif y[-1] == 0:
+#    y[-1] = 1
 
 d = decode(H, y, snr)
 
@@ -45,5 +52,11 @@ d = decode(H, y, snr)
 
 x = get_message(G, d)
 
+
+def inverse(y):
+    y = np.array([0 if z == 1 else 1 for z in y])
+    return y
+
+x = inverse(x)
 print(x)
 print(res)
